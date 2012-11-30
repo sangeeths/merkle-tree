@@ -13,6 +13,7 @@ class MarkleTree:
         self._top_hash  = 0
         self._dirs      = []
         self._mk        = {}
+        self._tophash   = ''
 
     def GetAllDirs(self, directory):
         for root, dirnames, filenames in os.walk(directory):
@@ -53,6 +54,7 @@ class MarkleTree:
         if not items:
             self._mk[directory] = ''
             return
+        digest = ''
         for item in items:
             if os.path.isdir(item):
                 self.DirDigest(item)
@@ -61,31 +63,14 @@ class MarkleTree:
                 for subitem in subitems:
                     s = s + self._mk[subitem]
                 self._mk[item] = self.md5sum(s)
+            else:
+                self._mk[item] = self.md5sum(item)
+            digest = digest + self._mk[item]
+        self._mk[directory] = self.md5sum(digest)        
 
-    def GetTopHash(self):
-        items = self.GetItems(self._root)
-        if not items:
-            return ''
-        s = ''
-        for item in items:
-            s = s + self._mk[item]
-        self._mk[self._root] = self.md5sum(s)
+    def TopHash(self):
+        return self._tophash
 
-    
-
-    def A(self, directory):
-        
-        # key = md5sum
-        # value = [filename, []]
-        for f in self._files:
-            self._mk[f] = self.md5sum(f)
-        self.PrintMTree()
-
-        self.DirDigest(directory)
-        self.GetTopHash()
-        self.PrintMTree()
-        
-    
     def md5sum(self, data):
         m = hashlib.md5()
         if os.path.isfile(data):
@@ -121,15 +106,17 @@ class MarkleTree:
         return
 
     def run(self):
-        self.GetDirs(self._root)
-        self.GetAllFiles(self._root)
-        if not self._files and not self._dirs:
-            return 0
+        #self.GetDirs(self._root)
+        #self.GetAllFiles(self._root)
+        #if not self._files and not self._dirs:
+        #    return 0
         #self.PrintItems()
         #self.GetItems(self._root)
         #self.GetMTree(self._root)
         #self.PrintMTree()
-        self.A(self._root)
+        #self.A(self._root)
+        self.DirDigest(self._root)
+        self.PrintMTree()
 
 
 if __name__ == "__main__":
