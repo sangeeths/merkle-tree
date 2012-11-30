@@ -1,75 +1,57 @@
 #!/usr/bin/env python
 
-import fnmatch
 import os
-import md5
-import sys
 import hashlib
 
 class MarkleTree:
     def __init__(self, root):
-        self._root      = root
-        self._files     = []
-        self._top_hash  = 0
-        self._dirs      = []
-        self._mk        = {}
-        self._tophash   = ''
+        self._linelength = 30
+        self._root = root
+        self._mt = {}
+        self._hashlist = {}
+        self._tophash = ''
+        self.__MT__()
+        self.HashList(self._root)
 
-    def GetAllDirs(self, directory):
-        for root, dirnames, filenames in os.walk(directory):
-            for dirname in dirnames:
-                self._dirs.append(os.path.join(root, dirname))
-        # Add the root to the list of directories 
-        self._dirs.append(self._root)
-        self._dirs.sort()
-        return
-    
-    def GetAllFiles(self, directory):
-        for root, dirnames, filenames in os.walk(directory):
-            for filename in filenames:
-                self._files.append(os.path.join(root, filename))
-        self._files.sort()
+    def Line(self):
+        print self._linelength*'-'
+
+    def PrintHashList(self):
+        self.Line()
+        for item, itemhash in self._hashlist.iteritems():
+            print "%s %s" % (itemhash, item)
+        self.Line()
         return
 
-    def GetDirs(self, directory):
-        items = os.listdir(directory)
-        dirs = []
-        for item in items:
-            if os.path.isdir(item):
-                dirs.append(os.path.join(directory, item))
-        dirs.sort()
-        return dirs
-
-    def GetItems(self, directory):
-        items = os.listdir(directory)
-        value = []
-        for item in items:
-            value.append(os.path.join(directory, item))
-        value.sort()
-        #print value
-        return value
-
-    def DirDigest(self, directory):
-        items = self.GetItems(directory)
-        if not items:
-            self._mk[directory] = ''
+    def PrintMT(self, hash):
+        value = self._mt[hash]
+        item = value[0]
+        child = value[1]
+        print "%s %s" % (hash, item)
+        if not child:
             return
-        digest = ''
-        for item in items:
-            if os.path.isdir(item):
-                self.DirDigest(item)
-                subitems = self.GetItems(item)
-                s = ''
-                for subitem in subitems:
-                    s = s + self._mk[subitem]
-                self._mk[item] = self.md5sum(s)
-            else:
-                self._mk[item] = self.md5sum(item)
-            digest = digest + self._mk[item]
-        self._mk[directory] = self.md5sum(digest)        
+        for itemhash, item in child.iteritems():  
+            print "    -> %s %s" % (itemhash, item)
+        for itemhash, item in child.iteritems():  
+            self.PrintMT(itemhash)
 
-    def TopHash(self):
-        return self._tophash
+    def MT(self):
+        for node, hash in self._hashlist.iteritems():
+            items = self.GetItems(node)
+            value = []
+            value.append(node)
+            list = {}
+            for item in items:
+                list[self._hashlist[item]] = item
+            value.append(list)
+            self._mt[hash] = value
+        self._tophash = self._hashlist[self._root]
+
+    def __MT__(self):
+        self.HashList(self._root)
+        #self.PrintHashList()
+        self.MT()
+        #self.PrintMT(self._tophash)
 
     def md5sum(self, data):
         m = hashlib.md5()
@@ -88,39 +70,50 @@ class MarkleTree:
             m.update(data)
         return m.hexdigest()
 
-    def PrintItems(self):
-        print "files: "
-        for filename in self._files:
-            print "%s - %32s" % (filename, self.md5sum(filename))
-            #print "%s" % filename
-        print "Directories: "
-        for dirname in self._dirs:
-            print "%s" % dirname
-    
-    def PrintMTree(self):
-        print "---------------------------------------"
-        for key, value in self._mk.iteritems():
-            print "Key      : %s" % key
-            print "Value    : %s" % value
-        print "---------------------------------------"
-        return
+    def GetItems(self, directory):
+        value = []
+        if os.path.isdir(directory):
+            items = os.listdir(directory)
+            for item in items:
+                value.append(os.path.join(directory, item))
+            value.sort()
+        return value
 
-    def run(self):
-        #self.GetDirs(self._root)
-        #self.GetAllFiles(self._root)
-        #if not self._files and not self._dirs:
-        #    return 0
-        #self.PrintItems()
-        #self.GetItems(self._root)
-        #self.GetMTree(self._root)
-        #self.PrintMTree()
-        #self.A(self._root)
-        self.DirDigest(self._root)
-        self.PrintMTree()
+    def HashList(self, rootdir):
+        items = self.GetItems(rootdir)
+        if not items:
+            self._hashlist[rootdir] = ''
+            return
+        digest = ''
+        for item in items:
+            if os.path.isdir(item):
+                self.HashList(item)
+                subitems = self.GetItems(item)
+                s = ''
+                for subitem in subitems:
+                    s = s + self._hashlist[subitem]
+                self._hashlist[item] = self.md5sum(s)
+            else:
+                self._hashlist[item] = self.md5sum(item)
+            digest = digest + self._hashlist[item]
+        self._hashlist[rootdir] = self.md5sum(digest)
 
+def MTDiff(mt_a, mt_b):
+    mt_a.PrintMT(mt_a._tophash)
+    print 45*'*'
+    mt_b.PrintMT(mt_b._tophash)
+    print 45*'*'
+     
 
 if __name__ == "__main__":
         mt_a = MarkleTree('/home/sangeeth/work/github/merkle-tree/testA')
-        mt_a.run()
+        #mt_a.PrintMT(mt_a._tophash)
+        #print 30*'#'
+        mt_b = MarkleTree('/home/sangeeth/work/github/merkle-tree/testB')
+        #mt_b.PrintMT(mt_b._tophash)
+        MTDiff(mt_a, mt_b)
+        #print mt_b._tophash
+        #mt_a = MarkleTree('/home/sangeeth/work/github/dltb')
+        #mt_a.run()
         # one = MarkelTree("/home/sangeeth/work/github/merkle-trees/testB"); 
 
