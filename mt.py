@@ -121,8 +121,6 @@ class MarkleTree:
                 else:
                     self._hashlist[itemname] = self.md5sum(itemname)
  
-
-  
 def MTDiff(mt_a, a_tophash, mt_b, b_tophash):
     if a_tophash == b_tophash:
         print "Top hash is equal for %s and %s" % (mt_a._root, mt_b._root)
@@ -143,9 +141,9 @@ def MTDiff(mt_a, a_tophash, mt_b, b_tophash):
                     diffhash = list(set(b_child.keys()) - set(a_child.keys()))
                     MTDiff(mt_a, itemhash, mt_b, diffhash[0])
                 
-
 if __name__ == "__main__":
     mt_a = MarkleTree('testA')
+    print mt_a._mt
     mt_b = MarkleTree('testB')
     MTDiff(mt_a, mt_a._tophash, mt_b, mt_b._tophash)
 
