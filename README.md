@@ -102,7 +102,7 @@ else:
 Currently, the PrintMT() does an inorder traversal and prints the values accordingly. The per- and post-order traversals should also be implemented.
 
 ### Handling file/folder adding and deleting 
-When two merkle trees are compared, other than modification/updation of file/folder, the comparision algorithm should also look out for the new added or deleted files. The following will cover all the cases.
+When two merkle trees are compared, other than modification/updation of file/folder, the comparison algorithm should also look out for the new added or deleted files. The following will cover all the cases.
 
 ```
 for hashes in treeA
